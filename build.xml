@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="AsmackLibrary" default="library">
+
+    <property file="local.properties"/>
+    <property file="build.properties"/>
+    <property file="default.properties"/>
+
+    <path id="android.antlibs">
+        <pathelement path="${sdk.dir}/tools/lib/anttasks.jar" />
+        <pathelement path="${sdk.dir}/tools/lib/sdklib.jar" />
+        <pathelement path="${sdk.dir}/tools/lib/androidprefs.jar" />
+        <pathelement path="${sdk.dir}/tools/lib/apkbuilder.jar" />
+        <pathelement path="${sdk.dir}/tools/lib/jarutils.jar" />
+    </path>
+
+    <taskdef
+        name="setup"
+        classname="com.android.ant.SetupTask"
+        classpathref="android.antlibs"
+    />
+
+    <setup />
+
+    <target name="library" depends="compile,-post-compile,-package-resources"
+                description="Builds the application and signs it with a debug key.">
+        <jar destfile="${out.absolute.dir}/${ant.project.name}-plain.jar" basedir="${out.classes.absolute.dir}" />
+        <zip destfile="${out.absolute.dir}/${ant.project.name}.jar" duplicate="preserve">
+            <fileset dir="${out.classes.absolute.dir}">
+                <include name="**/*" />
+            </fileset>
+            <zipgroupfileset dir="${external.libs.absolute.dir}" includes="*.jar"/>
+        </zip>
+    </target>
+
+</project>

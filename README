@@ -1,0 +1,16 @@
+== AsmackLibrary ==
+
+AsmackLibrary contains the pieces required by an user app to use the xmpp
+service. It does bundle the smack library and a smack compatible parser, thus
+allowing easier porting of existing smack applications.
+
+== Goals ==
+
+- Smack compatible Stanza -> Object parser
+- Boilerplate code to interact with the XMPP service
+
+== Anti-Goals ==
+
+- Protocol specific hacks
+- Smack manager compatibility (ChatManager, ....), they aren't designed for
+  constrained environments
