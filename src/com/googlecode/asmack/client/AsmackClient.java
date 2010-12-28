@@ -70,7 +70,7 @@ public class AsmackClient implements PacketListener {
      * The stanza intent name.
      */
     private final static String STANZA_INTENT_ACTION =
-                                "com.googlecode.asmack.intent.XMPP.STANZA";
+                            "com.googlecode.asmack.intent.XMPP.STANZA.RECEIVE";
 
     /**
      * The logging tag, AsmackClient.
