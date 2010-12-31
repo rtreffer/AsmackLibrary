@@ -59,6 +59,12 @@ public abstract class AsmackClientService
      */
     private final int resourceId;
 
+    /**
+     * Create a new asmack client server for a given configuration xml. The
+     * configuration XML is global for all services and should thus not be
+     * assumed to be different between clients.
+     * @param resourceId The smack xml resource id.
+     */
     public AsmackClientService(int resourceId) {
         this.resourceId = resourceId;
     }
