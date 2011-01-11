@@ -73,6 +73,12 @@ public class AsmackClient implements PacketListener {
                             "com.googlecode.asmack.intent.XMPP.STANZA.RECEIVE";
 
     /**
+     * The stanza sending name.
+     */
+    private final static String STANZA_SEND_INTENT_ACTION =
+                            "com.googlecode.asmack.intent.XMPP.STANZA.SEND";
+
+    /**
      * The logging tag, AsmackClient.
      */
     private static final String TAG = AsmackClient.class.getSimpleName();
@@ -248,6 +254,70 @@ public class AsmackClient implements PacketListener {
     }
 
     /**
+     * Directly send a single stanza via a given connection. This method is
+     * unsafe as it doesn't guarnatee the message to be received by the service.
+     * @param context The context to use for sending.
+     * @param stanza The XMPP stanza.
+     * @param via The account jid.
+     */
+    public static void sendUnsafe(
+        Context context,
+        Stanza stanza,
+        String via
+    ) {
+        Intent intent = new Intent();
+        intent.setAction(STANZA_SEND_INTENT_ACTION);
+        intent.putExtra("stanza", stanza);
+        context.sendBroadcast(intent, STANZA_SEND_INTENT_ACTION);
+    }
+
+    /**
+     * Send a smack packet via a given connection. This method is unsafe as it
+     * doesn't even guarantee the packet to be delivered to the service.
+     * @param context The context to use for intent broadcasts.
+     * @param packet The packet to send.
+     * @param via The account jid.
+     */
+    public static void sendUnsafe(
+        Context context,
+        Packet packet,
+        String via
+    ) {
+        Stanza stanza = toStanza(packet, null);
+        sendUnsafe(context, stanza, via);
+    }
+
+    /**
+     * Convert a packet to it's stanza form, adding a new ID if referenced.
+     * @param packet The smack packet to send.
+     * @param id A new id, or null.
+     * @return The stanza instance.
+     */
+    public final static Stanza toStanza(Packet packet, String id) {
+        String name = "message";
+        if (packet instanceof IQ) {
+            name = "iq";
+        }
+        if (packet instanceof Presence) {
+            name = "presence";
+        }
+        if (id == null) {
+            id = packet.getPacketID();
+        }
+        ArrayList<Attribute> attributes = new ArrayList<Attribute>();
+        if (id != null) {
+            attributes.add(new Attribute("id", "", id));
+        }
+        return new Stanza(
+            name,
+            packet.getXmlns(),
+            null,
+            packet.toXML(),
+            attributes
+        );
+    }
+
+    /**
      * Sends a packet over the wire, generating and setting a new id.
      * @param packet The smack packet to send.
      * @param ttl Time to live.
@@ -261,25 +331,55 @@ public class AsmackClient implements PacketListener {
         long ttl
     ) throws RemoteException {
         String id = generateId();
-        packet.setPacketID(id);
-        String name = "message";
-        if (packet instanceof IQ) {
-            name = "iq";
-        }
-        if (packet instanceof Presence) {
-            name = "presence";
-        }
-        ArrayList<Attribute> attributes = new ArrayList<Attribute>();
-        attributes.add(new Attribute("id", "", id));
-        Stanza stanza = new Stanza(
-            name,
-            packet.getXmlns(),
-            via,
-            packet.toXML(),
-            attributes
-        );
+        Stanza stanza = toStanza(packet, id);
         sendWithCallback(stanza, callback, ttl);
         return id;
+    }
+
+    /**
+     * Send a single packet from all currently connected accounts.
+     * @param packet The smack packet to send.
+     * @return The id String.
+     * @throws RemoteException In case of a remote service breakdown.
+     */
+    public String sendFromAllAccounts(Packet packet) throws RemoteException {
+        String id = generateId();
+        Stanza stanza = toStanza(packet, id);
+        xmppTransportService.sendFromAllAccounts(stanza);
+        return id;
+    }
+
+    /**
+     * Send a single stanza from all currently connected accounts.
+     * @param stanza The stanza to send.
+     * @throws RemoteException In case of a remote service breakdown.
+     */
+    public void sendFromAllAccounts(Stanza stanza) throws RemoteException {
+        xmppTransportService.sendFromAllAccounts(stanza);
+    }
+
+    /**
+     * Send a single packet from all currently connected accounts, using
+     * the resource as the source.
+     * @param packet The smack packet to send.
+     * @return The id String.
+     * @throws RemoteException In case of a remote service breakdown.
+     */
+    public String sendFromAllResources(Packet packet) throws RemoteException {
+        String id = generateId();
+        Stanza stanza = toStanza(packet, id);
+        xmppTransportService.sendFromAllResources(stanza);
+        return id;
+    }
+
+    /**
+     * Send a single stanza from all currently connected accounts, using
+     * the resource jid as from value.
+     * @param stanza The stanza to send.
+     * @throws RemoteException In case of a remote service breakdown.
+     */
+    public void sendFromAllResources(Stanza stanza) throws RemoteException {
+        xmppTransportService.sendFromAllResources(stanza);
     }
 
     /**
