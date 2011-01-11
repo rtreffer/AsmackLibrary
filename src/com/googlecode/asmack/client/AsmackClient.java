@@ -59,6 +59,7 @@ import android.util.Log;
 
 import com.googlecode.asmack.Attribute;
 import com.googlecode.asmack.Stanza;
+import com.googlecode.asmack.XmppIdentity;
 import com.googlecode.asmack.connection.IXmppTransportService;
 
 /**
@@ -556,6 +557,76 @@ public class AsmackClient implements PacketListener {
                      e);
             }
         }
+    }
+
+    /**
+     * Scan all connections for the current connection of the given jid and
+     * return the full resource jid for the user.
+     * @return The full user jid (including resource).
+     */
+    public String getFullJidByBare(String bare) throws RemoteException {
+        return xmppTransportService.getFullJidByBare(bare);
+    }
+
+    /**
+     * Retrieve all current account jids.
+     * @param connected True if you only jids of connected acocunts should be
+     *                  returned.
+     * @return List of account jids.
+     */
+    public String[] getAllAccountJids(boolean connected) throws RemoteException {
+        return xmppTransportService.getAllAccountJids(connected);
+    }
+
+    /**
+     * Retrieve all resource jids (where available).
+     * @param connected True if you only jids of connected acocunts should be
+     *                  returned.
+     * @return List of account jids.
+     */
+    public String[] getAllResourceJids(boolean connected)
+            throws RemoteException {
+        return xmppTransportService.getAllResourceJids(connected);
+    }
+
+    /**
+     * Enable a new feature for a given jid only. The new feature will be
+     * announced during the next tick.
+     * @param jid The jid of the account that should announce the feature.
+     * @param feature The feature to enable.
+     */
+    public void enableFeatureForJid(String jid, String feature)
+            throws RemoteException {
+        xmppTransportService.enableFeatureForJid(jid, feature);
+    }
+
+    /**
+     * Enable a feature service wide. This means that all connection will take
+     * advantage of the new feature. This may have unexpected side effects on
+     * other applications, so use with care.
+     * @param feature The feature to enable.
+     */
+    public void enableFeature(String feature) throws RemoteException {
+        xmppTransportService.enableFeature(feature);
+    }
+
+    /**
+     * Add a new identity to the xmpp account specified by the jid.
+     * @param jid The jid to enable.
+     * @param identity The identity to add.
+     */
+    public void addIdentityForJid(String jid, XmppIdentity identity)
+            throws RemoteException {
+        xmppTransportService.addIdentityForJid(jid, identity);
+    }
+
+    /**
+     * Add a new identity to all xmpp accounts. This affects all connections
+     * and should thus be handled with care.
+     * @param identity The xmpp identity to add.
+     */
+    public void addIdentity(XmppIdentity identity) throws RemoteException {
+        xmppTransportService.addIdentity(identity);
     }
 
 }
