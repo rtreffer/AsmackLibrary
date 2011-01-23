@@ -37,8 +37,6 @@
 
 package com.googlecode.asmack.client;
 
-import java.util.HashSet;
-
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.packet.Packet;
 
@@ -64,16 +62,6 @@ public class AsmackBroadcastReceiver extends BroadcastReceiver {
                             AsmackBroadcastReceiver.class.getSimpleName();
 
     /**
-     * Cache of imported resources.
-     */
-    private static HashSet<Integer> parsed = new HashSet<Integer>();
-
-    /**
-     * The resource id with the smack config xml.
-     */
-    private final int id;
-
-    /**
      * The packet listener that will handled the incoming packages.
      */
     private final PacketListener listener;
@@ -84,8 +72,7 @@ public class AsmackBroadcastReceiver extends BroadcastReceiver {
      * @param id The id of the xml config.
      * @param listener A packet listener parsed stanzas.
      */
-    public AsmackBroadcastReceiver(int id, PacketListener listener) {
-        this.id = id;
+    public AsmackBroadcastReceiver(PacketListener listener) {
         this.listener = listener;
     }
 
@@ -97,10 +84,6 @@ public class AsmackBroadcastReceiver extends BroadcastReceiver {
      */
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (!parsed.contains(id)) {
-            parsed.add(id);
-            SmackParser.getInstance().registerProviders(context, id);
-        }
         if (!intent.hasExtra("stanza")) {
             return;
         }

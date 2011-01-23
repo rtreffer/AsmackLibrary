@@ -39,6 +39,7 @@ package com.googlecode.asmack.client;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Random;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -61,11 +62,17 @@ import com.googlecode.asmack.Attribute;
 import com.googlecode.asmack.Stanza;
 import com.googlecode.asmack.XmppIdentity;
 import com.googlecode.asmack.connection.IXmppTransportService;
+import com.googlecode.asmack.parser.SmackParser;
 
 /**
  * Basic transport service client.
  */
 public class AsmackClient implements PacketListener {
+
+    /**
+     * Cache of imported resources.
+     */
+    private static HashSet<Integer> parsed = new HashSet<Integer>();
 
     /**
      * The stanza intent name.
@@ -151,19 +158,27 @@ public class AsmackClient implements PacketListener {
      * @param context The application context used for service binding.
      */
     public void open(Context context, int id) {
+        if (!parsed.contains(id)) {
+            parsed.add(id);
+            SmackParser.getInstance().registerProviders(context, id);
+        }
+
         Intent serviceIntent =
             new Intent(IXmppTransportService.class.getCanonicalName());
+
+        stanzaReceiver = new AsmackBroadcastReceiver(this);
+        context.registerReceiver(
+            stanzaReceiver,
+            new IntentFilter(STANZA_INTENT_ACTION)
+        );
+
         context.startService(serviceIntent);
         serviceConnection = new TransportServiceConnection(this);
+
         context.bindService(
             serviceIntent,
             serviceConnection,
             Context.BIND_NOT_FOREGROUND | Context.BIND_AUTO_CREATE
-        );
-        stanzaReceiver = new AsmackBroadcastReceiver(id, this);
-        context.registerReceiver(
-            stanzaReceiver,
-            new IntentFilter(STANZA_INTENT_ACTION)
         );
     }
 
@@ -302,8 +317,12 @@ public class AsmackClient implements PacketListener {
         if (packet instanceof Presence) {
             name = "presence";
         }
-        if (id == null) {
+        if (id == null || id.length() == 0) {
             id = packet.getPacketID();
+        }
+        String via = null;
+        if (packet.getFrom() != null && packet.getFrom().length() > 0) {
+            via = packet.getFrom();
         }
         ArrayList<Attribute> attributes = new ArrayList<Attribute>();
         if (id != null) {
@@ -312,7 +331,7 @@ public class AsmackClient implements PacketListener {
         return new Stanza(
             name,
             packet.getXmlns(),
-            null,
+            via,
             packet.toXML(),
             attributes
         );
@@ -333,6 +352,9 @@ public class AsmackClient implements PacketListener {
     ) throws RemoteException {
         String id = generateId();
         Stanza stanza = toStanza(packet, id);
+        if (stanza.getVia() == null && via != null) {
+            stanza.setVia(via);
+        }
         sendWithCallback(stanza, callback, ttl);
         return id;
     }
@@ -544,7 +566,14 @@ public class AsmackClient implements PacketListener {
                 replyLock.unlock();
             }
             if (callback != null) {
-                callback.getCallback().processPacket(null);
+                try {
+                    callback.getCallback().processPacket(packet);
+                } catch (Exception e) {
+                    Log.e(TAG,
+                        "Callback throws an exception. "
+                         + callback.getCallback(),
+                         e);
+                }
             }
         }
         for (PacketListener listener: listeners) {
