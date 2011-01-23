@@ -493,7 +493,7 @@ public class AsmackClient implements PacketListener {
         }
         long time = System.currentTimeMillis();
         Callback first = replyTtl.first();
-        while (first.getTTL() > time) {
+        while (first.getTTL() < time) {
             replyTtl.remove(first);
             replyMap.remove(first.getId());
             if (replyTtl.size() == 0) {
