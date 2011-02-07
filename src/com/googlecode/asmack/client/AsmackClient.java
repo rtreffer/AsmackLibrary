@@ -435,8 +435,10 @@ public class AsmackClient implements PacketListener {
                 replyLock.unlock();
             }
         }
-        xmppTransportService.send(stanza);
-        return id;
+        if (xmppTransportService.send(stanza)) {
+            return id;
+        }
+        return null;
     }
 
     /**
